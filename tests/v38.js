@@ -1,0 +1,22 @@
+// v1.42: Cây sống, Gia huấn, nền trang nhã
+const { chromium } = require("playwright"), assert = require("assert"), path = require("path");
+(async () => { const b = await chromium.launch(), errs = [];
+  const pg = await (await b.newContext({ viewport: { width: 1300, height: 900 } })).newPage(); pg.on("pageerror", e => errs.push(e.message));
+  await pg.addInitScript(() => { try { localStorage.setItem("gp.viewer", "u_admin"); } catch (e) {} });
+  const F = "file://" + path.resolve(__dirname, "../dist/_khung_thu.html");
+  await pg.goto(F + "#cay-song"); await pg.waitForTimeout(700);
+  const n = await pg.locator(".cs-nd").count(); assert.ok(n >= 10, "cây có lá: " + n);
+  assert.ok(await pg.locator(".cs-br").count() >= n - 1, "đủ cành");
+  await pg.click('[data-act="cs-z"][data-v="1"]'); await pg.waitForTimeout(100);
+  await pg.locator("a.cs-n").first().evaluate(e => e.dispatchEvent(new MouseEvent("click", { bubbles: true }))); await pg.waitForTimeout(400);
+  assert.ok(/#nguoi-/.test(pg.url()), "bấm lá mở hồ sơ: " + pg.url());
+  await pg.goto(F + "#gia-huan"); await pg.waitForTimeout(600);
+  assert.strictEqual(await pg.locator(".gh-bia").count(), 10, "10 điều gia huấn");
+  assert.strictEqual(await pg.locator(".gh-cd").count(), 2, "2 vế câu đối");
+  await pg.click('[data-act="gh-sua"]'); await pg.waitForTimeout(200);
+  await pg.fill('textarea[name="ds"]', "Điều thử | Nội dung thử"); await pg.fill('input[name="trai"]', "Vế trái thử");
+  await pg.click('form[data-submit="gh-save"] button[type="submit"]'); await pg.waitForTimeout(400);
+  assert.strictEqual(await pg.locator(".gh-bia").count(), 1, "lưu điều mới"); assert.ok(/Vế trái thử/.test(await pg.innerText(".gh-cd.l")), "lưu câu đối");
+  assert.ok(await pg.locator('#side a[href="#cay-song"]').count() && await pg.locator('#side a[href="#gia-huan"]').count(), "có trong menu");
+  assert.strictEqual(await pg.locator("#scene svg .s-ink").count(), 0, "nền không còn nhà/cây");
+  assert.deepStrictEqual(errs, []); console.log("✔ v1.42"); await b.close(); })().catch(e => { console.error("✘", e.message); process.exit(1); });
