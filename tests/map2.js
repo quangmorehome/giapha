@@ -1,0 +1,25 @@
+const { chromium } = require("playwright"), assert = require("assert"), path = require("path");
+(async () => { const b = await chromium.launch(), errs = [];
+  const pg = await (await b.newContext({ viewport: { width: 1100, height: 900 } })).newPage(); pg.on("pageerror", e => errs.push(e.message));
+  await pg.addInitScript(() => { try { localStorage.setItem("gp.viewer", "u_admin"); } catch (e) {} });
+  await pg.goto("file://" + path.resolve(__dirname, "../dist/_khung_thu.html") + "#ban-do"); await pg.waitForTimeout(500);
+  const P = await pg.evaluate(() => ["https://www.google.com/maps/place/Lang/@21.0285,105.8542,17z/data=!3m1", "https://www.google.com/maps?q=10.7769,106.7009", "https://www.google.com/maps/place/X/data=!3d16.4637!4d107.5909", "10.8, 106.6", "https://maps.app.goo.gl/AbCd123", "linh tinh"].map(u => GP.io.parseGmaps(u)));
+  assert.deepStrictEqual([P[0].lat, P[0].lng], [21.0285, 105.8542]); assert.deepStrictEqual([P[1].lat, P[1].lng], [10.7769, 106.7009]); assert.deepStrictEqual([P[2].lat, P[2].lng], [16.4637, 107.5909]); assert.deepStrictEqual([P[3].lat, P[3].lng], [10.8, 106.6]);
+  assert(P[4].short && !P[4].ok && !P[5].ok, "link rút gọn / rác");
+  const sid = await pg.evaluate(() => GP.store.S.data.sites[0].id);
+  await pg.click('[data-act="map-sel"][data-id="' + sid + '"]'); await pg.click('[data-act="map-edit"]'); await pg.waitForTimeout(200);
+  await pg.fill("#m-map_link", "https://www.google.com/maps/place/Lang/@21.0285,105.8542,17z"); await pg.waitForTimeout(100);
+  assert(/21\.028500, 105\.854200/.test(await pg.textContent("#maplink-st")), "xem trước toạ độ");
+  await pg.check('input[name=tao_mo][value=thanh_minh]'); await pg.check('input[name=tao_mo][value=chap]'); await pg.fill("#m-tmt", "10/3");
+  await pg.click('form[data-submit="map-save"] button[type=submit]'); await pg.waitForTimeout(300);
+  const site = await pg.evaluate(id => GP.store.S.data.sites.find(s => s.id === id), sid);
+  assert(site.map_xn && site.vi_do === 21.0285 && site.kinh_do === 105.8542, "lưu toạ độ từ link");
+  assert(/destination=21\.0285%2C105\.8542/.test(await pg.getAttribute('.mapact a.primary', "href")), "chỉ đường bằng toạ độ");
+  assert(/q=21\.0285%2C105\.8542/.test(await pg.getAttribute("#mapembed iframe", "src")), "khung Google Maps nhúng theo toạ độ");
+  assert((await pg.locator(".taomo-l li").count()) >= 3, "liệt kê ngày tảo mộ sắp tới");
+  const ics = await pg.evaluate(() => { const l = GP.ui.taoMo(); return { n: l.length, txt: GP.io.toIcs(l.map(e => ({ loai: "tao_mo", ngay: e.solar, id: e.site.id, ten: e.label, site: e.site })), i => i.ten, "x", { alarms: [7, 1] }) }; });
+  assert(ics.n >= 3 && /TRIGGER:-P7D/.test(ics.txt), "ics tảo mộ có nhắc");
+  // Excel khứ hồi giữ link
+  const rt = await pg.evaluate(async () => { const d = GP.store.S.data, imp = GP.xlsx.toImport(await GP.xlsx.parse(GP.xlsx.build(d.persons, d.spouses, d.sites, {}).buffer)); const s = imp.sites.find(x => x.vi_do === 21.0285); return s ? { v: s.vi_do, k: s.kinh_do, xn: s.map_xn, m: s.muc_hien_thi } : null; });
+  assert(rt && rt.k === 105.8542 && rt.xn, "Excel giữ toạ độ qua link");
+  assert.deepStrictEqual(errs, []); console.log("✔ bản đồ: link Google Maps → toạ độ, chỉ đường, nhúng, tảo mộ, My Maps, Excel"); await b.close(); })().catch(e => { console.error("✘", e.message); process.exit(1); });
