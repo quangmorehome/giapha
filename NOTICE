@@ -1,0 +1,5 @@
+Gia phả Họ Tống — ghi công bên thứ ba
+- Ý tưởng giao diện/tính năng (cây, sơ đồ tư duy, bong bóng, tìm quan hệ, kiểm tra dữ liệu, xuất lịch, sách gia phả) tham khảo dự án giapha-os của HomieLab (https://github.com/homielab/giapha-os), giấy phép MIT. Mã nguồn dự án này được viết lại độc lập, không sao chép mã của giapha-os.
+- Thuật toán âm lịch Việt Nam: Hồ Ngọc Đức (https://www.informatik.uni-leipzig.de/~duc/amlich/), công thức trăng non của Jean Meeus; viết lại cho dự án này.
+- Phông chữ Be Vietnam Pro và Lora (Google Fonts, SIL Open Font License), tải từ Google Fonts khi có mạng.
+- Nội dung: CC BY-NC-SA 4.0. Mã nguồn: AGPL-3.0 (CHỜ Kent xác nhận — quyết định D-03).
